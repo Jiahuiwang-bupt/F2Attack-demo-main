@@ -127,24 +127,20 @@ class BertTokenizer(object):
             split_tokens = self.wordpiece_tokenizer.tokenize(text)
         return split_tokens
 
-    # 下面这个是我自己加的 因为我想让输入bert的是word_level级别
+    
     def tokenize_word_level(self, text):
         split_tokens = []
-        # 不能用text.split(' ') 如果里面包含空格会出错
-        # split_tokens.append(text.strip())
+        
         for token in text.split(' '):
             split_tokens.append(token)
-            # split_tokens.append("[CLS]")
-        # print("查看未知单词的id:", self.vocab["[UNK]"])
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
         """Converts a sequence of tokens into ids using the vocab."""
         ids = []
-        # for token in tokens:  # 之前的写法
-        #     ids.append(self.vocab[token])
-        for token in tokens:  # 修改后的写法
-            try:  # 先执行try模块 出现了错误 再去执行except模块
+       
+        for token in tokens:  
+            try:  
                 ids.append(self.vocab[token])
             except:
                 ids.append(self.vocab["[UNK]"])
@@ -163,10 +159,9 @@ class BertTokenizer(object):
             tokens.append(self.ids_to_tokens[i])
         return tokens
 
-        # 这个函数是我自己加的
 
     def convert_single_id_to_tokens(self, id):
-        """使用词汇表 将一个token_id转换成对应的单词"""
+       
         token = self.ids_to_tokens[id]
         return token
 
@@ -238,7 +233,7 @@ class BertTokenizer(object):
             kwargs['max_len'] = min(kwargs.get('max_len', int(1e12)), max_len)
         # Instantiate tokenizer.
         tokenizer = cls(vocab_file, *inputs, **kwargs)
-        print("tokenizer载入成功")
+        
         return tokenizer
 
 
@@ -472,3 +467,4 @@ def convert_to_unicode(text):
             raise ValueError("Unsupported string type: %s" % (type(text)))
     else:
         raise ValueError("Not running on Python2 or Python 3?")
+
