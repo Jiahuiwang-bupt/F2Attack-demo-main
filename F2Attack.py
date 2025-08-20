@@ -15,7 +15,7 @@ from collections import defaultdict
 
 
 tf.disable_eager_execution()
-use_bpe = 1  # 是否使用bpe编码
+use_bpe = 1  
 threshold_pred_score = 0.3
 
 
@@ -23,8 +23,8 @@ class USE(object):
     def __init__(self, cache_path):
         super(USE, self).__init__()
         os.environ['TFHUB_CACHE_DIR'] = cache_path
-        # module_url = 'https://hub.tensorflow.google.cn/google/universal-sentence-encoder-large/3'
-        module_url = cache_path  # 已经下载好 可以直接用
+        
+        module_url = cache_path
         self.embed = hub.Module(module_url)
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
@@ -772,4 +772,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
