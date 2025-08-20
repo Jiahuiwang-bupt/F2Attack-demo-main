@@ -296,7 +296,7 @@ class BertSelfAttention(nn.Module):
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(*new_x_shape)
-        # print("查看x的shape:", x.size())
+        
         return x.permute(0, 2, 1, 3)
 
     def forward(self, hidden_states, attention_mask):
@@ -423,13 +423,13 @@ class BertPooler(nn.Module):
     def forward(self, hidden_states):
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token.
-        # print("hidden_states的size:", hidden_states.size())  # torch.Size([6, 128, 768])
+       
         first_token_tensor = hidden_states[:, 0]
-        # print("first_token_tensor的size:", first_token_tensor.size())  # torch.Size([6, 768])
+       
         pooled_output = self.dense(first_token_tensor)
-        # print("dense后的pooled_output的size:", pooled_output.size())  # torch.Size([6, 768])
+     
         pooled_output = self.activation(pooled_output)
-        # print("activation后的pooled_output的size:", pooled_output.size())  # torch.Size([6, 768])
+       
         return pooled_output
 
 
@@ -560,17 +560,10 @@ class BertPreTrainedModel(nn.Module):
                 (ex: num_labels for BertForSequenceClassification)
         """
         archive_file = pretrained_model_name_or_path
-        # pretrained_model_name_or_path 传入的值是"bert-base-uncased"
-        # if pretrained_model_name_or_path in PRETRAINED_MODEL_ARCHIVE_MAP:
-        #     archive_file = PRETRAINED_MODEL_ARCHIVE_MAP[pretrained_model_name_or_path]
-        #     # archive_file这里是bert的下载路径 我直接下载到了本地
-        # else:
-        #     archive_file = pretrained_model_name_or_path
-        # redirect to the cache, if necessary
+       
         try:
             resolved_archive_file = cached_path(archive_file, cache_dir=cache_dir)
-            # resolved_archive_file是bert-base-uncased
-            # 找到缓存路径
+           
         except EnvironmentError:
             logger.error(
                 "Model name '{}' was not found in model name list ({}). "
@@ -580,7 +573,7 @@ class BertPreTrainedModel(nn.Module):
                     ', '.join(PRETRAINED_MODEL_ARCHIVE_MAP.keys()),
                     archive_file))
             return None
-        if resolved_archive_file == archive_file:  # 走这条路
+        if resolved_archive_file == archive_file:  
             logger.info("loading archive file {}".format(archive_file))
         else:
             logger.info("loading archive file {} from cache at {}".format(
@@ -588,11 +581,11 @@ class BertPreTrainedModel(nn.Module):
 
         tempdir = None
         if os.path.isdir(resolved_archive_file) or from_tf:
-            # from_tf的值为False 所以只有路径存在才能走这条路·
+            
             serialization_dir = resolved_archive_file
-            # 添加了下面这行代码
+            
             print("serizlization_dir:", serialization_dir)
-        else:  # 不走下面这部分
+        else:  
             # Extract archive to temp dir
             tempdir = tempfile.mkdtemp()
             logger.info("extracting archive file {} to temp dir {}".format(
@@ -602,22 +595,22 @@ class BertPreTrainedModel(nn.Module):
             serialization_dir = tempdir
 
         # Load config
-        config_file = os.path.join(serialization_dir, CONFIG_NAME)  # 加载bert_config
+        config_file = os.path.join(serialization_dir, CONFIG_NAME)  
         config = BertConfig.from_json_file(config_file)
         logger.info("Model config {}".format(config))
         # Instantiate model.
         model = cls(config, *inputs, **kwargs)
 
-        if state_dict is None and not from_tf:  # 如果state_dict为None并且不从tf的checkpoints文件中读取权重
-            # 走这条路
+        if state_dict is None and not from_tf:  
+           
             weights_path = os.path.join(serialization_dir, WEIGHTS_NAME)
             # state_dict = torch.load(weights_path, map_location='cpu' if not torch.cuda.is_available() else None)
 
             state_dict = torch.load(weights_path, map_location='cuda:0')
-        if tempdir:  # 不走这里
+        if tempdir: 
             # Clean up temp dir
             shutil.rmtree(tempdir)
-        if from_tf:  # 不走这里
+        if from_tf: 
             # Directly load from a TensorFlow checkpoint
             weights_path = os.path.join(serialization_dir, TF_WEIGHTS_NAME)
             return load_tf_weights_in_bert(model, weights_path)
@@ -667,7 +660,7 @@ class BertPreTrainedModel(nn.Module):
         if len(error_msgs) > 0:
             raise RuntimeError('Error(s) in loading state_dict for {}:\n\t{}'.format(
                 model.__class__.__name__, "\n\t".join(error_msgs)))
-        print("载入模型成功")
+        
         return model
 
 
@@ -744,13 +737,13 @@ class BertModel(BertPreTrainedModel):
         extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
-        # print("查看输入")
+       
         # print(input_ids)
         # print('word_embeddings.weight:',self.embeddings.word_embeddings.weight)
         # print('position_embeddings.weight:', self.embeddings.position_embeddings.weight)
         # print('token_type_embeddings.weight:', self.embeddings.token_type_embeddings.weight)
         embedding_output = self.embeddings(input_ids, token_type_ids)
-        # print("查看输入")
+        
         # print("embedding_output", embedding_output.size())  # torch.Size([6, 128, 768])
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
@@ -761,7 +754,7 @@ class BertModel(BertPreTrainedModel):
         # print("sequence_output", sequence_output.size())  # torch.Size([6, 128, 768])
         pooled_output = self.pooler(sequence_output)
         # print("pooled_output", pooled_output.size())  # torch.Size([6, 768])
-        if not output_all_encoded_layers:  # 代码走不到这块
+        if not output_all_encoded_layers:  
             encoded_layers = encoded_layers[-1]
         return encoded_layers, pooled_output
 
@@ -1020,8 +1013,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
         _, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # print("查看模型输入的size:", input_ids.size())
-        # print("查看一下pooled_ouput:", pooled_output.size())
+        
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 
@@ -1261,78 +1253,6 @@ class BertForQuestionAnswering(BertPreTrainedModel):
             return start_logits, end_logits
 
 
-# Starting from here, self-defined classes and models.
-# 从这里开始是自己定义的类别和模型
-
-class BertForDiscriminator(BertPreTrainedModel):
-
-    def __init__(self, config, num_labels):
-        super(BertForDiscriminator, self).__init__(config)
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        # 在这里添加一个线性层
-        # self.add = nn.Linear(config.hidden_size, config.hidden_size)
-        self.discriminator = nn.Linear(config.hidden_size, 2)
-        self.loss_fct = CrossEntropyLoss()
-        self.apply(self.init_bert_weights)
-
-    def forward(self, input_ids_flaw=None, attention_mask=None, label_flaw=None):
-
-        # discriminator loss
-        # sequence_output_flaw: (batch_size, sequence_length, hidden_size)
-        # print("input_ids_flaw:{}".format(input_ids_flaw[0]))
-
-        sequence_output_flaw, _ = self.bert(input_ids_flaw, None, attention_mask,
-                                            output_all_encoded_layers=False)
-
-        # flaw_logits: (batch_size, sequence_length, 2)
-        sequence_output_flaw = self.dropout(sequence_output_flaw)
-        # 这里是添加的那个线性层
-        # temp = self.add(sequence_output_flaw)
-        flaw_logits = self.discriminator(sequence_output_flaw)
-        # flaw_logits = self.discriminator(temp)
-
-        # predictions = torch.argmax(flaw_logits,dim=2)
-        # print("predictions:{}".format(predictions[0]))
-
-        if label_flaw is not None:
-            flaw_loss = self.loss_fct(flaw_logits.view(-1, 2), label_flaw.view(-1))
-            return flaw_loss, flaw_logits
-        else:
-            return flaw_logits
-
-
-# 自定义损失函数
-class Cal_Loss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, pre, true, mask):
-        # print("查看为什么是空：")
-        # print("模型输出：", pre)
-        # print("模型输入：", true)
-        # print("计算的掩码：", mask)
-        # print("pre ", pre.dtype)
-        # print("true ", true.size())
-        pre = torch.masked_select(pre, mask)
-        true = torch.masked_select(true, mask)
-        diff = torch.sub(pre, true)
-        diff = torch.pow(diff, 2)
-        # print('diff:', diff)
-        loss = torch.sum(diff)
-        loss = torch.sqrt(loss)
-        return loss
-
-
-class RMSELoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.mse = nn.MSELoss()
-
-    def forward(self, yhat, y):
-        return torch.sqrt(self.mse(yhat, y))
-
-
 class BertForNgramClassification(BertPreTrainedModel):
 
     def __init__(self, config, num_labels, embedding_size, max_seq_length, max_ngram_length):
@@ -1392,693 +1312,6 @@ class BertForClassifier(BertPreTrainedModel):
         else:
             return logits
 
-
-# 下面这个是我自己写的以BERT作为编码器，实现BERT外加一层Attention实现分类
-
-# 自己定义的模型，在BERT的最后一层输出外面添加一层Attention层，根据Attention层聚合的向量用于最终的文本分类
-class BertAttn(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(BertAttn, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.attention = nn.Linear((2*config.hidden_size), config.hidden_size, bias=False)
-        self.v = nn.Linear(config.hidden_size, 1, bias=False)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        batch_size = encoder_outputs.size()[0]  # batch大小
-        # print("batch_size:", batch_size)
-
-        seq_len = encoder_outputs.size()[1]  # 每个文本的最大长度
-        # print("seq_len:", seq_len)
-
-        back_vector = pooled_output.unsqueeze(1).repeat(1, seq_len, 1)  # (batch_size, seq_len, hidden_size)
-        # print("back_vector的size：", back_vector.size())
-
-        temp = torch.cat((back_vector, encoder_outputs), dim=2)  # (batch_size, seq_len, 2*hidden_size)
-        # print("temp的size：", temp.size())
-
-        energy = torch.tanh(self.attention(temp))  # (batch_size, seq_len, hidden_size)
-        # print("energy的size：", energy.size())
-
-        attention = self.v(energy).squeeze(2)  # (batch_size, seq_len, 1)-->(batch_size, seq_len)
-        # print("attention的size：", attention.size())
-
-        # print("attn_mask的size：", attn_mask.size())
-        attention = torch.add(attention, attn_mask)  # 在计算softmax之前需要把输入部分的attn_mask和attention相加，
-        # print("attention的size：", attention.size())
-
-        attn_score = nn.Softmax(dim=1)(attention)   # 对于[cls] [sep] [pad]的部分，attn_score为0
-        # print("attn_score的size：", attn_score.size())
-        # print("attn_score:", attn_score)
-        # print("检查求和结果是否为1：", torch.sum(attn_score))
-
-        attn = attn_score.unsqueeze(1)  # (batch_size, 1 ,seq_len)
-        # print("attn的size：", attn.size())
-
-        # 这里需要计算出上下文向量
-        classify_embedding = torch.bmm(attn, encoder_outputs)   # (batch_size, 1, hidden_size)
-        # print("classify_embedding的size：", classify_embedding.size())
-
-        # torch.bmm实现两个维度3的tensor相乘，b*n*m与b*m*p->b*n*p
-        classify_embedding = classify_embedding.squeeze(1)  # (batch_size, hidden_size)
-        # print("classify_embedding的size：", classify_embedding.size())
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.classifier(classify_embedding)  # (batch_size, num_labels)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, attn_score
-            # return logits
-
-
-# 自己定义的模型，在BERT的最后一层输出外面添加一层Attention层，根据Attention层聚合的向量用于最终的文本分类
-class BertPoolerAttn(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(BertPoolerAttn, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-        self.activation = nn.Tanh()
-        self.attention = nn.Linear((2*config.hidden_size), config.hidden_size, bias=False)
-        self.v = nn.Linear(config.hidden_size, 1, bias=False)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        batch_size = encoder_outputs.size()[0]  # batch大小
-        # print("batch_size:", batch_size)
-
-        seq_len = encoder_outputs.size()[1]  # 每个文本的最大长度
-        # print("seq_len:", seq_len)
-
-        # 下面是我自己写的对BERT的hidden_states的最后一层进行平均池化
-        my_pooler_output = encoder_outputs[:, 0]
-        # print("查看这里的输出是否正确：", my_pooler_output.size())
-
-        my_pooler_output = self.dense(my_pooler_output)
-        my_pooler_output = self.activation(my_pooler_output)
-        # print("****")
-        # print("查看这里的输出是否正确：", my_pooler_output.size())
-        back_vector = my_pooler_output.unsqueeze(1).repeat(1, seq_len, 1)  # (batch_size, seq_len, hidden_size)
-        # print("back_vector的size：", back_vector.size())
-
-        temp = torch.cat((back_vector, encoder_outputs), dim=2)  # (batch_size, seq_len, 2*hidden_size)
-        # print("temp的size：", temp.size())
-
-        energy = torch.tanh(self.attention(temp))  # (batch_size, seq_len, hidden_size)
-        # print("energy的size：", energy.size())
-
-        attention = self.v(energy).squeeze(2)  # (batch_size, seq_len, 1)-->(batch_size, seq_len)
-        # print("attention的size：", attention.size())
-
-        # print("attn_mask的size：", attn_mask.size())
-        attention = torch.add(attention, attn_mask)  # 在计算softmax之前需要把输入部分的attn_mask和attention相加，
-        # print("attention的size：", attention.size())
-
-        attn_score = nn.Softmax(dim=1)(attention)   # 对于[cls] [sep] [pad]的部分，attn_score为0
-        # print("attn_score的size：", attn_score.size())
-        # print("attn_score:", attn_score)
-        # print("检查求和结果是否为1：", torch.sum(attn_score))
-
-        attn = attn_score.unsqueeze(1)  # (batch_size, 1 ,seq_len)
-        # print("attn的size：", attn.size())
-
-        # 这里需要计算出上下文向量
-        classify_embedding = torch.bmm(attn, encoder_outputs)   # (batch_size, 1, hidden_size)
-        # print("classify_embedding的size：", classify_embedding.size())
-
-        # torch.bmm实现两个维度3的tensor相乘，b*n*m与b*m*p->b*n*p
-        classify_embedding = classify_embedding.squeeze(1)  # (batch_size, hidden_size)
-        # print("classify_embedding的size：", classify_embedding.size())
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.classifier(classify_embedding)  # (batch_size, num_labels)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, attn_score
-            # return logits
-
-
-class BertMeanAttn(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(BertMeanAttn, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.attention = nn.Linear((2*config.hidden_size), config.hidden_size, bias=False)
-        self.v = nn.Linear(config.hidden_size, 1, bias=False)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_outputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_outputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        batch_size = encoder_outputs.size()[0]  # batch大小
-        # print("batch_size:", batch_size)
-
-        seq_len = encoder_outputs.size()[1]  # 每个文本的最大长度
-        # print("seq_len:", seq_len)
-
-        mean_encoder_outputs = torch.mean(encoder_outputs, dim=1, keepdim=True)  # BERT最后一层隐藏状态取平均，用于背景向量
-        # print("查看对最后一层隐藏层求平均之后的结果：", mean_encoder_outputs.size())
-
-        back_vector = mean_encoder_outputs.repeat(1, seq_len, 1)
-        # print("back_vector的size：", back_vector.size())
-
-        # back_vector = pooled_output.unsqueeze(1).repeat(1, seq_len, 1)  # (batch_size, seq_len, hidden_size)
-        # print("back_vector的size：", back_vector.size())
-
-        temp = torch.cat((back_vector, encoder_outputs), dim=2)  # (batch_size, seq_len, 2*hidden_size)
-        # print("temp的size：", temp.size())
-
-        energy = torch.tanh(self.attention(temp))  # (batch_size, seq_len, hidden_size)
-        # print("energy的size：", energy.size())
-
-        attention = self.v(energy).squeeze(2)  # (batch_size, seq_len, 1)-->(batch_size, seq_len)
-        # print("attention的size：", attention.size())
-
-        # print("attn_mask的size：", attn_mask.size())
-        attention = torch.add(attention, attn_mask)  # 在计算softmax之前需要把输入部分的attn_mask和attention相加，
-        # print("attention的size：", attention.size())
-
-        attn_score = nn.Softmax(dim=1)(attention)   # 对于[cls] [sep] [pad]的部分，attn_score为0
-        # print("attn_score的size：", attn_score.size())
-        # print("attn_score:", attn_score)
-        # print("检查求和结果是否为1：", torch.sum(attn_score))
-
-        attn = attn_score.unsqueeze(1)  # (batch_size, 1 ,seq_len)
-        # print("attn的size：", attn.size())
-
-        # 这里需要计算出上下文向量
-        classify_embedding = torch.bmm(attn, encoder_outputs)   # (batch_size, 1, hidden_size)
-        # print("classify_embedding的size：", classify_embedding.size())
-
-        # torch.bmm实现两个维度3的tensor相乘，b*n*m与b*m*p->b*n*p
-        classify_embedding = classify_embedding.squeeze(1)  # (batch_size, hidden_size)
-        # print("classify_embedding的size：", classify_embedding.size())
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.classifier(classify_embedding)  # (batch_size, num_labels)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, attn_score
-
-
-class BertMyAttn(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(BertMyAttn, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-        self.attention_layer = nn.Sequential(
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True)
-        )
-        self.activation = nn.Tanh()
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        # 下面是我自己写的对BERT的hidden_states的最后一层进行平均池化
-        bert_last_hidden = encoder_outputs[:, 0]   # (batch_size, hidden_size)
-        # print("查看这里的输出是否正确：", bert_last_hidden.size())
-        bert_last_hidden = bert_last_hidden.unsqueeze(1)
-
-        atten_w = self.attention_layer(bert_last_hidden)  # (batch_size, 1 hidden_size)
-        # print("atten_w:", atten_w.size())
-        m = self.activation(encoder_outputs)  # (batch_size, seq_len, hidden_size)
-
-        # (batch_size, 1, hidden_size) * (batch_size, hidden_size, seq_len)->(batch_size, 1, seq_len)
-        atten_context = torch.bmm(atten_w, m.transpose(1, 2))
-        # print("atten_context:", atten_context.size())
-        attn_mask = attn_mask.unsqueeze(1)  # (batch_size, 1 , seq_len)
-        # print("attn_mask:", attn_mask)
-        atten_context = torch.add(atten_context, attn_mask)
-
-        softmax_w = f.softmax(atten_context, dim=-1)   # (batch_size, 1, seq_len)
-
-        classify_embedding = torch.bmm(softmax_w, encoder_outputs)  # (batch_size, 1, hidden_size)
-        # print("classify_embedding:", classify_embedding.size())
-        classify_embedding = classify_embedding.squeeze()  # (batch_size, hidden_size)
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.classifier(classify_embedding)  # (batch_size, num_labels)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, softmax_w.squeeze()
-
-
-class BertNewAttn(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(BertNewAttn, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-        self.activation = nn.Tanh()
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        atten_w = pooled_output.unsqueeze(1)  # (batch_size, 1 hidden_size)
-        # print("atten_w:", atten_w.size())
-        m = self.activation(encoder_outputs)  # (batch_size, seq_len, hidden_size)
-
-        # (batch_size, 1, hidden_size) * (batch_size, hidden_size, seq_len)->(batch_size, 1, seq_len)
-        atten_context = torch.bmm(atten_w, m.transpose(1, 2))
-        # print("atten_context:", atten_context.size())
-        attn_mask = attn_mask.unsqueeze(1)  # (batch_size, 1 , seq_len)
-        # print("attn_mask:", attn_mask)
-        atten_context = torch.add(atten_context, attn_mask)
-
-        softmax_w = f.softmax(atten_context, dim=-1)   # (batch_size, 1, seq_len)
-
-        classify_embedding = torch.bmm(softmax_w, encoder_outputs)  # (batch_size, 1, hidden_size)
-        # print("classify_embedding:", classify_embedding.size())
-        classify_embedding = classify_embedding.squeeze()  # (batch_size, hidden_size)
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.classifier(classify_embedding)  # (batch_size, num_labels)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, softmax_w.squeeze()
-
-
-class Bert_Attn_fc_out(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(Bert_Attn_fc_out, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-        self.keep_dropout = 0.1
-        self.attention_layer = nn.Sequential(
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True)
-        )
-        self.fc_out = nn.Sequential(
-            nn.Dropout(self.keep_dropout),
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True),
-            nn.Dropout(self.keep_dropout),
-            nn.Linear(config.hidden_size, num_labels)
-        )
-        self.activation = nn.Tanh()
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        # 下面是我自己写的对BERT的hidden_states的最后一层进行平均池化
-        bert_last_hidden = encoder_outputs[:, 0]   # (batch_size, hidden_size)
-        # print("查看这里的输出是否正确：", bert_last_hidden.size())
-        bert_last_hidden = bert_last_hidden.unsqueeze(1)
-
-        atten_w = self.attention_layer(bert_last_hidden)  # (batch_size, 1 ,  hidden_size)
-        # print("atten_w:", atten_w.size())
-        m = self.activation(encoder_outputs)  # (batch_size, seq_len, hidden_size)
-
-        # (batch_size, 1, hidden_size) * (batch_size, hidden_size, seq_len)->(batch_size, 1, seq_len)
-        atten_context = torch.bmm(atten_w, m.transpose(1, 2))
-        # print("atten_context:", atten_context.size())
-        attn_mask = attn_mask.unsqueeze(1)  # (batch_size, 1 , seq_len)
-        # print("attn_mask:", attn_mask)
-        atten_context = torch.add(atten_context, attn_mask)
-
-        softmax_w = f.softmax(atten_context, dim=-1)   # (batch_size, 1, seq_len)
-
-        classify_embedding = torch.bmm(softmax_w, encoder_outputs)  # (batch_size, 1, hidden_size)
-        # print("classify_embedding:", classify_embedding.size())
-        classify_embedding = classify_embedding.squeeze()  # (batch_size, hidden_size)
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.fc_out(classify_embedding)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, softmax_w.squeeze()
-
-
-class Bert_Define_Vector(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(Bert_Define_Vector, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-        self.keep_dropout = 0.1
-        self.attention_layer = nn.Sequential(
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True)
-        )
-
-        self.back_vector = nn.Parameter(torch.Tensor(config.hidden_size), requires_grad=True)
-
-        self.fc_out = nn.Sequential(
-            nn.Dropout(self.keep_dropout),
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True),
-            nn.Dropout(self.keep_dropout),
-            nn.Linear(config.hidden_size, num_labels)
-        )
-        self.activation = nn.Tanh()
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        # 下面是我自己写的对BERT的hidden_states的最后一层进行平均池化
-        bert_last_hidden = encoder_outputs[:, 0]   # (batch_size, hidden_size)
-        # print("查看这里的输出是否正确：", bert_last_hidden.size())
-        bert_last_hidden = bert_last_hidden.unsqueeze(1)
-
-        batch_size = encoder_outputs.size()[0]
-        context_vector = self.back_vector
-        # print("111：", context_vector.size())
-        context_vector = context_vector.unsqueeze(0)
-        # print("222:", context_vector.size())
-        context_vector = context_vector.repeat(batch_size, 1)
-        # print("333:", context_vector.size())
-        context_vector = context_vector.unsqueeze(1)
-        # print("444:", context_vector.size())
-
-        atten_w = self.attention_layer(context_vector)  # (batch_size, 1, hidden_size)
-
-        m = self.activation(encoder_outputs)  # (batch_size, seq_len, hidden_size)
-
-        # (batch_size, 1, hidden_size) * (batch_size, hidden_size, seq_len)->(batch_size, 1, seq_len)
-        atten_context = torch.bmm(atten_w, m.transpose(1, 2))
-        # print("atten_context:", atten_context.size())
-        attn_mask = attn_mask.unsqueeze(1)  # (batch_size, 1 , seq_len)
-        # print("attn_mask:", attn_mask)
-        atten_context = torch.add(atten_context, attn_mask)
-
-        softmax_w = f.softmax(atten_context, dim=-1)   # (batch_size, 1, seq_len)
-
-        classify_embedding = torch.bmm(softmax_w, encoder_outputs)  # (batch_size, 1, hidden_size)
-        # print("classify_embedding:", classify_embedding.size())
-        classify_embedding = classify_embedding.squeeze()  # (batch_size, hidden_size)
-
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.fc_out(classify_embedding)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, softmax_w.squeeze()
-
-
-class Bert_Self_Attention(BertPreTrainedModel):
-    def __init__(self, config, num_labels):
-        super(Bert_Self_Attention, self).__init__(config)
-        self.num_labels = num_labels
-        self.bert = BertModel(config)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, num_labels)
-        self.apply(self.init_bert_weights)
-
-        self.W_Q = nn.Linear(config.hidden_size, config.hidden_size, bias=False)
-        self.W_K = nn.Linear(config.hidden_size, config.hidden_size, bias=False)
-        self.W_V = nn.Linear(config.hidden_size, config.hidden_size, bias=False)
-
-        self.keep_dropout = 0.1
-        self.attention_layer = nn.Sequential(
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True)
-        )
-
-        self.fc_out = nn.Sequential(
-            nn.Dropout(self.keep_dropout),
-            nn.Linear(config.hidden_size, config.hidden_size),
-            nn.ReLU(inplace=True),
-            nn.Dropout(self.keep_dropout),
-            nn.Linear(config.hidden_size, num_labels)
-        )
-        self.activation = nn.Tanh()
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-        batch_size = encoder_outputs.size()[0]
-        seq_len = encoder_outputs.size()[1]
-        attn_mask = attn_mask.unsqueeze(1)  # (batch_size, seq_len)-->(batch_size, 1, seq_len)
-        pad_attn_mask = attn_mask.expand(batch_size, seq_len, seq_len)
-        # print("pad_attn_mask:", pad_attn_mask.size())
-
-        # 计算Q\K\V
-        Q = self.W_Q(encoder_outputs)
-        K = self.W_K(encoder_outputs)
-        V = self.W_V(encoder_outputs)
-        d_k = K.size()[-1]  # hidden_size
-        # print("d_k:", d_k)
-        scores = torch.matmul(Q, K.transpose(1, 2)) / math.sqrt(d_k)
-        # print("score:", scores.size())
-        scores = torch.add(scores, pad_attn_mask)
-        # print("score:", scores.size())
-        attention_scores = f.softmax(scores, dim=-1)
-        # print("attention_scores:", attention_scores, attention_scores.size())
-
-        context = torch.matmul(attention_scores, V)
-        # print("context:", context.size())
-        classify_embedding = context.sum(1)
-        # print("classify_embedding:", classify_embedding.size())
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.fc_out(classify_embedding)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, attention_scores
-
-
-class Bert_Lstm_Atten(nn.Module):
-    def __init__(self, bert_path, hidden_dim, output_size, n_layers, num_labels, bidirectional=True, drop_prob=0.1):
-        super(Bert_Lstm_Atten, self).__init__()
-
-        self.output_size = output_size
-        self.n_layers = n_layers
-        self.hidden_dim = hidden_dim
-        self.num_labels = num_labels
-        self.bidirectional = bidirectional
-
-        # Bert --- Bert模型需要嵌入到自定义模型中
-        self.bert = BertModel.from_pretrained(bert_path)
-        for param in self.bert.parameters():
-            param.requires_grad = True
-
-        # LSTM Layers
-        self.lstm = nn.LSTM(768, hidden_dim, n_layers, batch_first=True, bidirectional=bidirectional)
-
-        # dropout layer
-        self.dropout = nn.Dropout(drop_prob)
-
-        # Attention_layer
-        self.attention_layer = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(inplace=True)
-        )
-
-        # Linear and sigmoid layers
-        self.fc_out = nn.Sequential(
-            nn.Dropout(drop_prob),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.Dropout(drop_prob),
-            nn.Linear(hidden_dim, num_labels)
-        )
-
-        self.activation = nn.Tanh()
-
-    def attention_net_with_w(self, lstm_out, lstm_hidden, attn_mask):
-        """
-        :param lstm_out: (batch_size, seq_len, hidden_size*2)
-        :param lstm_hidden: (batch_size, num_layers*num_directions, hidden_size)
-        :param attn_mask: (batch_size, seq_len)
-        :return: (batch_size, hidden_size)
-        """
-        # print("lstm_out；", lstm_out.size())
-        lstm_tmp_out = torch.chunk(lstm_out, 2, -1)  # 实现维度切分，按照最后一维切成两个tensor
-        # print("lstm_tmp_out；", lstm_tmp_out[0].size())
-        h = lstm_tmp_out[0] + lstm_tmp_out[1]  # (batch_size, seq_len, hidden_size)
-        # print("h:", h.size())
-
-        # print("lstm_hidden:", lstm_hidden.size())
-        lstm_hidden = torch.sum(lstm_hidden, dim=1)  # (batch_size, hidden_size)
-        # print("lstm_hidden:", lstm_hidden.size())
-
-        lstm_hidden = lstm_hidden.unsqueeze(1)  # (batch_size, 1, hidden_size)
-
-        atten_w = self.attention_layer(lstm_hidden)  # (batch_size, 1, hidden_size)
-        # print("atten_w:", atten_w.size())
-
-        m = self.activation(h)  # (batch_size, seq_len, hidden_size)
-        # print("m:", m.size())
-
-        atten_context = torch.bmm(atten_w, m.transpose(1, 2))  # (batch_size, 1, seq_len)
-        # print("atten_context:", atten_context.size())
-
-        attn_mask = attn_mask.unsqueeze(1)  # (batch_size, 1, seq_len)
-        atten_context = torch.add(atten_context, attn_mask)  # (batch_size, 1, seq_len)
-        softmax_w = f.softmax(atten_context, dim=-1)
-        # print("softmax_w:", softmax_w.size(), softmax_w)
-
-
-        context = torch.bmm(softmax_w, h)  # (batch_size, 1, hidden_size)
-        result = context.squeeze(1)  # (batch_size, hidden_size)
-        return result, softmax_w.squeeze(1)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None, attn_mask=None):
-        encoder_outputs, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
-        # encoder_ouputs :一个batch的文本的每个对应位置的编码，(batch_size, max_seq_len, hidden_size)
-        # pooled_output: 一个batch文本的[cls]编码 (batch_size, hidden_size) 把这个作为Attention的背景向量
-        # print("维度查看")
-        # print("encoder_ouputs的size：", encoder_ouputs.size())
-        # print("pooled_output的size：", pooled_output.size())
-
-        lstm_out, (final_hidden_state, final_cell_state) = self.lstm(encoder_outputs)
-        # print("lstm_out:", lstm_out.size())  # (batch_size, seq_len, hidden_size*2)
-
-        # lstm_out = lstm_out.permute(1, 0, 2)  # (seq_len, batch_size, hidden_size*2)
-        # print("lstm_out:", lstm_out.size())
-
-        # print("final_hidden_state:", final_hidden_state.size())
-        # (num_layer*num_directions, batch_size, hidden_size)
-        final_hidden_state = final_hidden_state.permute(1, 0, 2)
-        # print("final_hidden_state:", final_hidden_state.size())
-        # (batch_size, num_layer*num_directions, hidden_size)
-
-        classify_embedding, atten_score = self.attention_net_with_w(lstm_out, final_hidden_state, attn_mask)
-        # 在得到了Attention层聚合的向量后，下面是正常文本二分类
-        classify_embedding = self.dropout(classify_embedding)  # 这个是模仿上一行写的
-        logits = self.fc_out(classify_embedding)
-        # print("logits的size：", logits.size())
-        # print("logits:", logits)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            # print("000:", logits.view(-1, self.num_labels))
-            # print("111:", labels.view(-1))
-            return loss, logits
-        else:
-            return logits, atten_score
 
 
 
