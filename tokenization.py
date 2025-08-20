@@ -130,19 +130,16 @@ class BertTokenizer(object):
 
     def tokenize_word_level(self, text):
         split_tokens = []
-        # 不能用text.split(' ') 如果里面包含空格会出错
-        # split_tokens.append(text.strip())
+       
         for token in text.split(' '):
             split_tokens.append(token)
-            # split_tokens.append("[CLS]")
-        # print("查看未知单词的id:", self.vocab["[UNK]"])
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
         """Converts a sequence of tokens into ids using the vocab."""
         ids = []
-        for token in tokens:  # 修改后的写法
-            try:  # 先执行try模块 出现了错误 再去执行except模块
+        for token in tokens:  
+            try:  
                 ids.append(self.vocab[token])
             except:
                 ids.append(self.vocab["[UNK]"])
@@ -185,57 +182,20 @@ class BertTokenizer(object):
         Download and cache the pre-trained model file if needed.
         """
         if pretrained_model_name_or_path in PRETRAINED_VOCAB_ARCHIVE_MAP:
-            # vocab_file = PRETRAINED_VOCAB_ARCHIVE_MAP[pretrained_model_name_or_path]
-            # 原来这里vocab_file是直接一个网址链接 用于下载vocab.txt 要改一下
             vocab_file = "bert-base-uncased"
         vocab_file = "bert-base-uncased"
         if os.path.isdir(vocab_file):
             vocab_file = os.path.join(vocab_file, VOCAB_NAME)
 
         logger.info("loading vocabulary file {}".format(vocab_file))
-        # file = open(vocab_file, encoding="utf-8")
-        # lines = []
-        # line = file.readline()
-        # while line:
-        #     if line.isspace():
-        #         # tag = tag + 1
-        #         line = file.readline()
-        #     else:
-        #         line = line.strip()
-        #         print(line)
-        #         # line = line.split("\t")[1]
-        #         lines.append(line)
-        #         line = file.readline()
-        # file.close()
-        # print(tag)
-        # 这下面的内容不要
-        # # redirect to the cache, if necessary
-        # try:
-        #     resolved_vocab_file = cached_path(vocab_file, cache_dir=cache_dir)
-        # except EnvironmentError:
-        #     logger.error(
-        #         "Model name '{}' was not found in model name list ({}). "
-        #         "We assumed '{}' was a path or url but couldn't find any file "
-        #         "associated to this path or url.".format(
-        #             pretrained_model_name_or_path,
-        #             ', '.join(PRETRAINED_VOCAB_ARCHIVE_MAP.keys()),
-        #             vocab_file))
-        #     return None
-        # if resolved_vocab_file == vocab_file:
-        #     logger.info("loading vocabulary file {}".format(vocab_file))
-        # else:
-        #     logger.info("loading vocabulary file {} from cache at {}".format(
-        #         vocab_file, resolved_vocab_file))
-
-        # 下面的内容是必须的 但是进行了修改
+        
         if pretrained_model_name_or_path in PRETRAINED_VOCAB_POSITIONAL_EMBEDDINGS_SIZE_MAP:
-            # if we're using a pretrained model, ensure the tokenizer wont index sequences longer
-            # than the number of positional embeddings  如果使用预训练模型，要保证分词器索引的序列不会超过位置嵌入的数量
+          
             max_len = PRETRAINED_VOCAB_POSITIONAL_EMBEDDINGS_SIZE_MAP[pretrained_model_name_or_path]
             kwargs['max_len'] = min(kwargs.get('max_len', int(1e12)), max_len)
         # Instantiate tokenizer.
         tokenizer = cls(vocab_file, *inputs, **kwargs)
-        print("tokenizer载入成功")
+        
         return tokenizer
 
 
