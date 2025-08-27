@@ -154,8 +154,8 @@ def save_data(data, labels, path, type='train'):
 
 def main(args):
     if args.dataset == 'mr':
-        train_x, train_y = dataloader.read_corpus('/data/datasets/mr/train.txt')
-        test_x, test_y = dataloader.read_corpus('/data/datasets/mr/test.txt')
+        train_x, train_y = dataloader.read_corpus('sentiment/mr/train.txt')
+        test_x, test_y = dataloader.read_corpus('sentiment/mr/test.txt')
     elif args.dataset == 'yahoo':
         train_x, train_y = dataloader.read_yahoo_corpus('yahoo_answers_csv/train.csv')
         test_x, test_y = dataloader.read_yahoo_corpus('yahoo_answers_csv/test.csv')
@@ -226,3 +226,4 @@ if __name__ == "__main__":
     print (args)
     torch.cuda.set_device(args.gpu_id)
     main(args)
+
