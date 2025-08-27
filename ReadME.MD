@@ -18,7 +18,7 @@ This is the implementation code of the paper *F2Attack: Two-Factors Scoring Meth
 •	Download the glove 200 dimensional vectors from https://nlp.stanford.edu/projects/glove/ unzip it.
 
 ## Generate Bert Embdding 
-•	Run train_tgt_cnn_models.py 
+•	Run bert_embedding.py 
 
 ## How to Run:
 ## implementation Instruction
@@ -36,6 +36,7 @@ We take the target model MR_wordCNN as an example and give the running instructi
 
 
  
+
 
 
 
